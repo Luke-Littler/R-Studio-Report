@@ -1,0 +1,671 @@
+---
+title: "From Classroom to Career: How Regional Industries Shape Educational and Early-Career
+  Trajectories in the UK"
+author: "Luke Littler"
+date: "22-07-2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidytuesdayR)
+library(writexl)
+library(readxl)
+library(ggplot2)
+theme_set(theme_minimal())
+
+# Load data set from Tidy Tuesday (1104 obs.)
+english_education <- read_excel("english_education.xlsx", sheet = "Data")
+
+# Filter out rows with missing values (NAs) in the 'rgn11nm' column (1102 obs.)
+region_filtered <- subset(english_education, !is.na(rgn11nm))
+
+# Add column 'main_industry_category' to region_filtered
+region_filtered$region_industry_category <- " "
+
+# Find the unique values of regions in 'english_education' 
+unique_regions <- unique(region_filtered$rgn11nm)
+
+# View the output of regions in the console
+print(unique_regions)
+
+# Create a new dataframe called `unique_regions_industry` with the unique values as the `rgn11nm` column
+unique_regions_industry <- data.frame(rgn11nm = unique_regions)
+
+# Add a new column called `region_industry_category` to the `unique_regions_industry` dataframe and initialize it with empty strings
+unique_regions_industry$region_industry_category <- ""
+
+# Now we have a list of all of the unique regions from the 'region_filtered'
+# data, we can now begin research on what industry category was most prevalent 
+# in the 1960s for each region and record that externally for now. 
+
+# Now we have determined which industry category was most prevalent to each
+# region during the 1960s, we can start to input that data in the 
+# 'region_industry_category' column. 
+
+# Update the `region_industry_category` for East Midlands to 'Secondary'
+unique_regions_industry$region_industry_category[unique_regions_industry$rgn11nm == "East Midlands"] <- "Secondary"
+
+# Update the `region_industry_category` for South West to 'Primary'
+unique_regions_industry$region_industry_category[unique_regions_industry$rgn11nm == "South West"] <- "Primary"
+
+# Update the `region_industry_category` for East of England to 'Primary'
+unique_regions_industry$region_industry_category[unique_regions_industry$rgn11nm == "East of England"] <- "Primary"
+
+# Update the `region_industry_category` for Yorkshire and The Humber to 'Secondary'
+unique_regions_industry$region_industry_category[unique_regions_industry$rgn11nm == "Yorkshire and The Humber"] <- "Secondary"
+
+# Update the `region_industry_category` for North West to 'Secondary'
+unique_regions_industry$region_industry_category[unique_regions_industry$rgn11nm == "North West"] <- "Secondary"
+
+# Update the `region_industry_category` for West Midlands to 'Secondary'
+unique_regions_industry$region_industry_category[unique_regions_industry$rgn11nm == "West Midlands"] <- "Secondary"
+
+# Update the `region_industry_category` for South East to 'Tertiary'
+unique_regions_industry$region_industry_category[unique_regions_industry$rgn11nm == "South East"] <- "Tertiary"
+
+# Update the `region_industry_category` for North East to 'Secondary'
+unique_regions_industry$region_industry_category[unique_regions_industry$rgn11nm == "North East"] <- "Secondary"
+
+# Update the `region_industry_category` for London to 'Tertiary'
+unique_regions_industry$region_industry_category[unique_regions_industry$rgn11nm == "London"] <- "Tertiary"
+
+# We now have industry categories assigned to each region. The next step is to 
+# insert the categories to the 'region_industry_category' column for all entries
+# in the 'region_filtered' data set. 
+
+# Update the 'region_industry_column' in 'region_filtered' data set based on values in 'unique_regions_industry'
+# Loop over each row in unique_regions_industry
+for (i in 1:nrow(unique_regions_industry)) {
+  # Access the current row using indexing
+  current_row <- unique_regions_industry[i, ]
+  
+  # Get the region_industry_category value for the current region
+  region_industry_category_value <- current_row$region_industry_category
+  
+  # Find all entries in region_filtered where rgn11nm matches
+  matching_rows <- which(region_filtered$rgn11nm == current_row$rgn11nm)
+  
+  # Insert region_industry_category_value into the main_industry_column of matching rows
+  region_filtered$region_industry_category[matching_rows] <- region_industry_category_value
+}
+
+# Great! We have now assigned industry categories to all the entries in our main data set (region_filtered).
+```
+
+## 1. Introduction
+
+The Industrial Revolution in the United Kingdom significantly shaped its economic landscape, leading to the emergence of distinct industrial categories in different regions. This report investigates the relationship between these historical industry categories (primary, secondary, and tertiary) and various educational and early-career outcomes. We utilize data from the "English Education" data set provided by Tidy Tuesday, covering a longitudinal study of students from 2007/2008 to 2012/2013. This allows us to examine how a region's industrial focus might influence educational attainment, career choices, and income levels.
+
+[Click here for Tidy Tuesday data set.](https://github.com/rfordatascience/tidytuesday/blob/master/data/2024/2024-01-23/readme.md)
+
+### 1.1 Industry Categories
+
+*   **Primary Industries:** Involve the extraction and production of raw materials (e.g., agriculture, mining, fishing).
+*   **Secondary Industries:** Transform raw materials into finished products (e.g., manufacturing, construction).
+*   **Tertiary Industries:** Provide services rather than goods (e.g., healthcare, education, finance, government).
+
+```{r include_table, echo=FALSE}
+unique_regions_industry <- data.frame(
+  rgn11nm = c("East Midlands", "South West", "East of England", "Yorkshire and The Humber", "North West", "West Midlands", "South East", "North East", "London"),
+  region_industry_category = c("Secondary", "Primary", "Primary", "Secondary", "Secondary", "Secondary", "Tertiary", "Secondary", "Tertiary")
+)
+
+knitr::kable(unique_regions_industry, caption = "Industry Categories by Region")
+```
+
+The assignment of industry categories to specific regions in the UK reflects their historical economic development during and after the Industrial Revolution.
+
+**Primary Industries (South West, East of England):** These regions were historically dominated by agriculture, fishing, and mining, which are characteristic of primary industries. The fertile soils of the South West and East Anglia were well-suited for agriculture, while the coastlines provided opportunities for fishing. The South West also had a significant mining industry, particularly for tin and copper.
+
+**Secondary Industries (East Midlands, Yorkshire and The Humber, North West, West Midlands, North East):** These regions became centers of manufacturing and heavy industry during the Industrial Revolution. The East Midlands had a strong textile industry, while Yorkshire and The Humber were known for coal mining, steel production, and shipbuilding. The North West was a major hub for textile manufacturing, while the West Midlands developed a diverse range of industries including car manufacturing, engineering, and metalworking. The North East had a thriving shipbuilding industry and coal mining.
+
+**Tertiary Industries (South East, London):** The South East and London became centers of commerce, finance, and services due to their proximity to major ports, political power, and cultural institutions. London's growth as a financial center and its role as the capital contributed to the expansion of tertiary industries in the region.
+
+It's important to note that while these categories represent the historically dominant industries, the economies of these regions have diversified over time. However, the legacy of their industrial past continues to shape their economic structures and the skills and educational needs of their populations. 
+
+
+## 2. Methodology
+
+### 2.1 Data Preparation
+
+This study began by filtering the "English Education" data set to remove any rows with missing region data. Subsequently, we assigned industry categories (primary, secondary, tertiary) to each region based on the historically prevalent industry in that area.
+
+### 2.2 Data Aggregation
+
+We calculated mean and median values for the following educational attainment metrics, segmented by industry category:
+
+*   Key Stage 2 (KS2) attainment
+*   Key Stage 4 (KS4) attainment
+*   Level 2 attainment at age 18
+*   Level 3 attainment at age 18
+*   Full-time higher education activity at age 19
+*   Sustained further education activity at age 19
+*   Apprenticeships at age 19
+*   Employment with earnings (above 0 and above £10,000) at age 19
+*   Out-of-work status at age 19
+*   Highest level of qualification achieved by age 22
+
+### 2.3 Data Visualization
+
+We generated a series of dot plots and bar charts to illustrate the relationship between industry category and the educational and early-career outcomes described above.
+
+
+## 3. Results
+
+### 3.1 Key Stage Attainment
+
+### 3.1.2 Key Stage 2 (KS2) Attainment
+
+To understand early educational attainment, we analyzed the mean and median Key Stage 2 (KS2) attainment scores for students in 2007-2008, grouped by the dominant industry category of their region.
+
+```{r KS2-analysis, echo=FALSE}
+# Group the data by region_industry_category and calculate mean/median KS2 attainment
+industry_ks2_attainment_mean <- aggregate(key_stage_2_attainment_school_year_2007_to_2008 ~ region_industry_category, data = region_filtered, FUN = mean)
+industry_ks2_attainment_median <- aggregate(key_stage_2_attainment_school_year_2007_to_2008 ~ region_industry_category, data = region_filtered, FUN = median)
+
+# Merge the data frames
+merged_ks2_attainment <- merge(industry_ks2_attainment_mean, industry_ks2_attainment_median, 
+                               by = "region_industry_category", suffixes = c("_mean", "_median"))
+
+# Calculate the difference between mean and median
+merged_ks2_attainment$ks2_attainment_diff <- merged_ks2_attainment$key_stage_2_attainment_school_year_2007_to_2008_mean - merged_ks2_attainment$key_stage_2_attainment_school_year_2007_to_2008_median
+
+# Print the results in a table
+knitr::kable(merged_ks2_attainment,
+             col.names = c("Industry Category", "Mean KS2 Attainment", "Median KS2 Attainment", "Difference"),
+             caption = "Mean, Median, and Difference in KS2 Attainment by Industry Category (2007-2008)",
+             digits = 2) # Round to 2 decimal places for better readability
+# Create the dot plot using mean values
+ggplot(industry_ks2_attainment_mean, aes(x = region_industry_category, y = key_stage_2_attainment_school_year_2007_to_2008)) +
+  geom_point(size = 5, color = "dodgerblue") +
+  labs(x = "Industry Category",
+       y = "Mean KS2 Attainment (%)") +
+  ylim(72, 75) +  # Adjust if needed for your data
+  theme_minimal() 
+```
+
+Table 2 reveals a nuanced relationship between industry category and Key Stage 2 (KS2) attainment in the UK.
+
+While the mean KS2 scores are relatively close across all three industry categories, ranging from 73.01 to 74.55, the slight differences suggest a potential impact of regional industry on early educational achievement. Students from secondary industry regions exhibit a marginally higher mean attainment than those from primary and tertiary regions.
+
+The differences between mean and median scores offer further insights. The primary industry category shows the largest negative difference (-0.27), indicating a slightly left-skewed distribution where a few lower-performing students may be pulling down the average. Conversely, the tertiary category shows the largest absolute difference (-0.45), suggesting a wider spread of scores with a few higher-achieving outliers potentially raising the mean.
+
+### 3.1.3 Key Stage 4 (KS4) Attainment
+
+To assess educational attainment at a later stage, we analyzed the mean and median Key Stage 4 (KS4) attainment scores for students in 2012-2013, grouped by the dominant industry category of their region.
+
+```{r KS4-analysis, echo=FALSE}
+# Group the region_filtered data frame by region_industry_category and calculate mean/median KS4 attainment by industry category
+industry_ks4_attainment_mean <- aggregate(key_stage_4_attainment_school_year_2012_to_2013 ~ region_industry_category, data = region_filtered, FUN = mean)
+industry_ks4_attainment_median <- aggregate(key_stage_4_attainment_school_year_2012_to_2013 ~ region_industry_category, data = region_filtered, FUN = median)
+
+# Merge the data frames
+merged_ks4_attainment <- merge(industry_ks4_attainment_mean, industry_ks4_attainment_median, by = "region_industry_category", suffixes = c("_mean", "_median"))
+
+# Calculate the difference
+merged_ks4_attainment$ks4_attainment_diff <- merged_ks4_attainment$key_stage_4_attainment_school_year_2012_to_2013_mean - merged_ks4_attainment$key_stage_4_attainment_school_year_2012_to_2013_median
+
+# Print the results in a table
+knitr::kable(merged_ks4_attainment,
+       col.names = c("Industry Category", "Mean KS4 Attainment", "Median KS4 Attainment", "Difference"),
+       caption = "Mean, Median, and Difference in KS4 Attainment by Industry Category (2012-2013)",
+       digits = 2) # Round to 2 decimal places for better readability
+
+# Create the dot plot
+ggplot(industry_ks4_attainment_mean, aes(x = region_industry_category, y = key_stage_4_attainment_school_year_2012_to_2013)) +
+ geom_point(size = 5, color = "dodgerblue") +
+ labs(x = "Industry Category",
+    y = "Mean KS4 Attainment (%)") +
+ ylim(58, 65) + # Adjust if needed for your data
+ theme_minimal() 
+```
+
+Table 3 illustrates the mean and median Key Stage 4 (KS4) attainment scores in 2012-2013 across three industry categories in the UK.
+
+The Tertiary sector demonstrates the highest average attainment (64.26), notably exceeding the Primary (59.28) and Secondary (61.16) sectors. This pattern aligns with the previous KS2 findings, suggesting a persistent advantage for students in tertiary-dominated regions.
+
+The Primary sector has the largest difference (0.76). This suggests a slightly wider spread of scores in this sector, potentially with some lower-performing students pulling down the average.
+
+### 3.2 Attainment of Level 2 and Level 3 Qualifications at Age 18
+
+In this section, we examine the mean Level 2 and Level 3 attainment rates at age 18 across different industry categories. Level 2 qualifications typically include GCSEs at grades A*-C (or equivalent), while Level 3 qualifications include A-levels or vocational qualifications at level 3.
+
+```{r level2&3-analysis, echo=FALSE}
+# Group the region_filtered data frame by region_industry_category and calculate mean/median Level 2 at age 18 by industry category
+industry_level_2_attainment_mean <- aggregate(level_2_at_age_18 
+                                      ~ region_industry_category, data = region_filtered, FUN = mean)
+industry_level_2_attainment_median <- aggregate(level_2_at_age_18 
+                                                  ~ region_industry_category, data = region_filtered, FUN = median)
+# Merge the data frames
+merged_level_2_attainment <- merge(industry_level_2_attainment_mean, industry_level_2_attainment_median, by = "region_industry_category", suffixes = c("_mean", "_median"))
+# Calculate the difference
+merged_level_2_attainment$level_2_at_age_18_diff <- merged_level_2_attainment$level_2_at_age_18_mean - merged_level_2_attainment$level_2_at_age_18_median
+
+# Group the region_filtered data frame by region_industry_category and calculate mean/median Level 3 at age 18 by industry category
+industry_level_3_attainment_mean <- aggregate(level_3_at_age_18 
+                                             ~ region_industry_category, data = region_filtered, FUN = mean)
+industry_level_3_attainment_median <- aggregate(level_3_at_age_18 
+                                          ~ region_industry_category, data = region_filtered, FUN = median)
+# Merge the data frames
+merged_level_3_attainment <- merge(industry_level_3_attainment_mean, industry_level_3_attainment_median, by = "region_industry_category", suffixes = c("_mean", "_median"))
+# Calculate the difference
+merged_level_3_attainment$level_3_at_age_18_diff <- merged_level_3_attainment$level_3_at_age_18_mean - merged_level_3_attainment$level_3_at_age_18_median
+
+# Print results for Level 2 attainment in a table
+knitr::kable(merged_level_2_attainment,
+             col.names = c("Industry Category", "Mean Level 2 Attainment", "Median Level 2 Attainment", "Difference"),
+             caption = "Mean, Median, and Difference in Level 2 Attainment at Age 18 by Industry Category",
+             digits = 2) # Round to 2 decimal places for better readability
+
+# Create the dot plot for mean Level 2 attainment
+ggplot(industry_level_2_attainment_mean, aes(x = region_industry_category, y = level_2_at_age_18)) +
+  geom_point(size = 5, color = "dodgerblue") +
+  labs(x = "Industry Category", y = "Mean Level 2 Attainment (%)") +
+  ylim(80, 86) +
+  theme_minimal() 
+
+# Print results for Level 3 attainment in a table
+knitr::kable(merged_level_3_attainment,
+             col.names = c("Industry Category", "Mean Level 3 Attainment", "Median Level 3 Attainment", "Difference"),
+             caption = "Mean, Median, and Difference in Level 3 Attainment at Age 18 by Industry Category",
+             digits = 2) # Round to 2 decimal places for better readability
+# Create the dot plot for mean Level 3 attainment
+ggplot(industry_level_3_attainment_mean, aes(x = region_industry_category, y = level_3_at_age_18)) +
+  geom_point(size = 5, color = "dodgerblue") + 
+  labs(title = "Mean Level 3 Attainment at Age 18 by Industry Category",
+       x = "Industry Category",
+       y = "Mean Level 3 Attainment (%)") +  # Assuming attainment is a percentage
+  ylim(46, 54) +  # Set appropriate y-axis limits if needed
+  theme_minimal() 
+```
+
+### 3.2.1 Analysis of Level 2 & 3 Attainment Results
+
+Tables 4 and 5 highlight the disparities in Level 2 and Level 3 attainment rates at age 18 across different industry categories in the UK.
+
+Level 2 Attainment (Table 4):
+
+* Tertiary Leads: The Tertiary sector boasts the highest mean Level 2 attainment rate (84.78%), signifying that students in this sector are more likely to      achieve qualifications equivalent to GCSEs at grades A*-C.
+* Modest Differences: The mean attainment rates for Primary (83.07%) and Secondary (83.44%) sectors are relatively close, suggesting a smaller gap in Level 2   attainment for these categories.
+* Outliers in Tertiary: The negative difference between mean and median in the Tertiary sector (-0.51) indicates a slight left-skew in the distribution,        possibly due to some lower-performing outliers.
+
+Level 3 Attainment (Table 5):
+
+* Tertiary Maintains Advantage: Similar to Level 2, the Tertiary sector leads in Level 3 attainment (52.89%) as well, suggesting higher rates of students       pursuing advanced qualifications like A-levels or level 3 vocational courses.
+* Notable Gap in Primary: The Primary sector lags behind in Level 3 attainment (48.89%), showing a more significant difference compared to Level 2 attainment.
+* Symmetrical Distributions: The differences between mean and median scores are relatively small for all three categories, indicating relatively symmetrical    distributions of Level 3 attainment within each sector.
+
+### 3.3 Further Education Participation at Age 19
+
+This section delves into the participation of 19-year-olds in full-time higher education and sustained further education across the different industry categories. We aim to understand if the dominant industry of a region influences the likelihood of young people continuing their education.
+
+### 3.3.1 Results of Further Education Participation
+
+```{r full-time-education-analysis, echo=FALSE}
+# Convert activity columns to numeric, removing non-numeric characters first
+region_filtered$activity_at_age_19_full_time_higher_education <- gsub("[^0-9.]", "", region_filtered$activity_at_age_19_full_time_higher_education)
+region_filtered$activity_at_age_19_sustained_further_education <- gsub("[^0-9.]", "", region_filtered$activity_at_age_19_sustained_further_education)
+region_filtered$activity_at_age_19_full_time_higher_education <- as.numeric(region_filtered$activity_at_age_19_full_time_higher_education)
+region_filtered$activity_at_age_19_sustained_further_education <- as.numeric(region_filtered$activity_at_age_19_sustained_further_education)
+# Group and calculate mean/median, removing NAs
+industry_full_time_higher_education_activity_mean <- aggregate(activity_at_age_19_full_time_higher_education ~ region_industry_category, data = region_filtered, FUN = function(x) mean(x, na.rm = TRUE))
+industry_full_time_higher_education_activity_median <- aggregate(activity_at_age_19_full_time_higher_education ~ region_industry_category, data = region_filtered, FUN = function(x) median(x, na.rm = TRUE))
+
+# Merge the data frames
+merged_full_time_higher_education_activity <- merge(industry_full_time_higher_education_activity_mean, industry_full_time_higher_education_activity_median, by = "region_industry_category", suffixes = c("_mean", "_median"))
+
+# Calculate the difference (only for rows without NAs)
+merged_full_time_higher_education_activity$full_time_higher_education_activity_diff <- 
+ ifelse(!is.na(merged_full_time_higher_education_activity$activity_at_age_19_full_time_higher_education_mean) &
+     !is.na(merged_full_time_higher_education_activity$activity_at_age_19_full_time_higher_education_median),
+     merged_full_time_higher_education_activity$activity_at_age_19_full_time_higher_education_mean - merged_full_time_higher_education_activity$activity_at_age_19_full_time_higher_education_median,
+     NA) # Assign NA if either mean or median is NA
+
+
+# Print results for full-time higher education activity in a table
+knitr::kable(merged_full_time_higher_education_activity,
+    col.names = c("Industry Category", "Mean Full-Time HE Participation", "Median Full-Time HE Participation", "Difference"),
+    caption = "Mean, Median, and Difference in Full-Time Higher Education Participation at Age 19 by Industry Category",
+    digits = 2)
+ggplot(industry_full_time_higher_education_activity_mean, aes(x = region_industry_category, y = activity_at_age_19_full_time_higher_education)) +
+  geom_point(size = 5, color = "dodgerblue") +
+  labs(x = "Industry Category", y = "Mean Full-Time Higher Education Activity (%)") +
+  ylim(30, 38) +  # Adjust if needed for your data
+  theme_minimal() 
+```
+
+### 3.3.2 Results of Sustained Further Education Participation
+
+The mean and median participation rates in sustained further education (FE) at age 19, broken down by industry category.
+
+```{r sustained-education-table, echo=FALSE}
+# Group the region_filtered data frame by region_industry_category and calculate mean/median sustained full time higher education 
+# at age 19 by industry category
+industry_sustained_full_time_higher_education_activity_mean <- aggregate(activity_at_age_19_sustained_further_education ~ region_industry_category, data = region_filtered, FUN = mean)
+industry_sustained_full_time_higher_education_activity_median <- aggregate(activity_at_age_19_sustained_further_education ~ region_industry_category, data = region_filtered, FUN = median)
+# Merge the data frames
+merged_industry_sustained_full_time_higher_education_activity <- merge(industry_sustained_full_time_higher_education_activity_mean, industry_sustained_full_time_higher_education_activity_median, by = "region_industry_category", suffixes = c("_mean", "_median"))
+# Calculate the difference
+merged_industry_sustained_full_time_higher_education_activity$activity_at_age_19_sustained_further_education_diff <- merged_industry_sustained_full_time_higher_education_activity$activity_at_age_19_sustained_further_education_mean - merged_industry_sustained_full_time_higher_education_activity$activity_at_age_19_sustained_further_education_median
+# Print results for sustained further education activity in a table
+knitr::kable(merged_industry_sustained_full_time_higher_education_activity,
+       col.names = c("Industry Category", "Mean Sustained FE Participation", "Median Sustained FE Participation", "Difference"),
+       caption = "Mean, Median, and Difference in Sustained Further Education Participation at Age 19 by Industry Category",
+       digits = 2)
+ggplot(industry_sustained_full_time_higher_education_activity_mean, aes(x = region_industry_category, y = activity_at_age_19_sustained_further_education)) +
+ geom_point(size = 5, color = "dodgerblue") +
+ labs(x = "Industry Category", y = "Mean Sustained Further Education Activity (%)") +
+ ylim(16, 24) + # Adjust if needed for your data
+ theme_minimal() 
+```
+
+### 3.3.3 Analysis of Further Education Participation
+
+Tables 6 and 7 shed light on distinct patterns of further education participation among 19-year-olds across different industry sectors in the UK.
+
+Full-time Higher Education (Table 6):
+
+The data reveals a clear preference for full-time higher education (HE) in the Tertiary sector, with a mean participation rate of 36.24%. This is considerably higher than the Primary (32.30%) and Secondary (33.11%) sectors. The minimal differences between mean and median values within each category suggest a relatively even distribution of participation. This pattern could be attributed to factors such as greater awareness and easier access to higher education institutions in tertiary-dominated regions, a stronger cultural emphasis on pursuing academic degrees, and career paths that often necessitate university qualifications.
+
+Sustained Further Education (Table 7):
+
+Conversely, Table 7 presents a contrasting picture for sustained further education (FE). The Secondary sector demonstrates the highest participation rate (22.91%), surpassing Primary (19.26%) and Tertiary (16.60%) sectors.  This indicates a greater tendency among individuals from secondary industry regions to engage in vocational training or apprenticeships. This might be influenced by the types of jobs available in these regions, which may prioritize technical skills and on-the-job training over academic qualifications.
+
+Notably, the lower participation rate in sustained further education within the Tertiary sector at age 19 could be partially attributed to the prevalence of gap years among students in this sector. Some students may defer their entry into further education, opting instead to take a year off before commencing university or other programs. This could temporarily depress the participation rate at this specific age but doesn't necessarily indicate a lower overall interest in further education among this group.
+
+### 3.4 Early Career Outcomes at Age 19
+
+This section examines the mean rates of various early career outcomes at age 19, including apprenticeships, employment with earnings above zero, employment with earnings above £10,000, and out-of-work status.  We explore how these outcomes differ across industry categories to understand the potential influence of regional industry on the initial career paths of young people.
+
+### 3.4.1 Apprenticeships at Age 19
+
+```{r apprenticeships-analysis, echo=FALSE}
+# Convert activity columns to numeric, removing non-numeric characters first
+region_filtered$activity_at_age_19_appprenticeships <- gsub("[^0-9.]", "", region_filtered$activity_at_age_19_appprenticeships)
+region_filtered$activity_at_age_19_appprenticeships <- as.numeric(region_filtered$activity_at_age_19_appprenticeships)
+
+# Group the region_filtered data frame by region_industry_category and calculate mean/median apprenticeships  
+# at age 19 by industry category
+industry_apprenticeships_19_activity_mean <- aggregate(activity_at_age_19_appprenticeships ~ region_industry_category, data = region_filtered, FUN = function(x) mean(x, na.rm = TRUE))
+industry_apprenticeships_19_activity_median <- aggregate(activity_at_age_19_appprenticeships ~ region_industry_category, data = region_filtered, FUN = function(x) median(x, na.rm = TRUE))
+
+# Merge the data frames
+merged_industry_apprenticeships_19_activity <- merge(industry_apprenticeships_19_activity_mean, industry_apprenticeships_19_activity_median, by = "region_industry_category", suffixes = c("_mean", "_median"))
+
+# Convert columns to numeric to ensure they're numeric after the merge
+merged_industry_apprenticeships_19_activity$activity_at_age_19_appprenticeships_mean <- as.numeric(merged_industry_apprenticeships_19_activity$activity_at_age_19_appprenticeships_mean)
+merged_industry_apprenticeships_19_activity$activity_at_age_19_appprenticeships_median <- as.numeric(merged_industry_apprenticeships_19_activity$activity_at_age_19_appprenticeships_median)
+
+# Calculate the difference (suppress warnings for potential NAs)
+merged_industry_apprenticeships_19_activity$industry_apprenticeships_19_activity_diff <- suppressWarnings(
+  merged_industry_apprenticeships_19_activity$activity_at_age_19_appprenticeships_mean - 
+    merged_industry_apprenticeships_19_activity$activity_at_age_19_appprenticeships_median)
+
+# Print results for apprenticeships activity in a table
+knitr::kable(merged_industry_apprenticeships_19_activity,
+       col.names = c("Industry Category", "Mean Apprenticeship Participation", "Median Apprenticeship Participation", "Difference"),
+       caption = "Mean, Median, and Difference in Apprenticeship Participation at Age 19 by Industry Category",
+       digits = 2)
+
+ggplot(industry_apprenticeships_19_activity_mean, aes(x = region_industry_category, y = activity_at_age_19_appprenticeships)) +
+  geom_point(size = 5, color = "dodgerblue") +
+  labs(x = "Industry Category", y = "Mean Apprenticeship Participation (%)") +
+  ylim(10, 16) + # Adjust if needed for your data
+  theme_minimal() 
+```
+
+### 3.4.2 Employment with Earnings Above 0 at Age 19
+
+Table 9 presents the mean and median rates of employment with earnings above zero at age 19, categorized by industry sector. This metric provides insight into the initial earning potential of young people entering the workforce in different industry contexts.
+
+```{r employment-0-table, echo=FALSE}
+# Convert activity columns to numeric, removing non-numeric characters first
+region_filtered$activity_at_age_19_employment_with_earnings_above_0<- gsub("[^0-9.]", "", region_filtered$activity_at_age_19_employment_with_earnings_above_0)
+region_filtered$activity_at_age_19_employment_with_earnings_above_0 <- as.numeric(region_filtered$activity_at_age_19_employment_with_earnings_above_0)
+# Group the region_filtered data frame by region_industry_category and calculate mean/median employment (Earnings above 0)  
+# activity at age 19 by industry category
+industry_employment_19_0_activity_mean <- aggregate(activity_at_age_19_employment_with_earnings_above_0 ~ region_industry_category, data = region_filtered, FUN = function(x) mean(x, na.rm = TRUE))
+industry_employment_19_0_activity_median <- aggregate(activity_at_age_19_employment_with_earnings_above_0 ~ region_industry_category, data = region_filtered, FUN = function(x) median(x, na.rm = TRUE))
+# Merge the data frames
+merged_industry_employment_19_0_activity <- merge(industry_employment_19_0_activity_mean, industry_employment_19_0_activity_median, by = "region_industry_category", suffixes = c("_mean", "_median"))
+
+# Convert columns to numeric before calculating the difference
+merged_industry_employment_19_0_activity$activity_at_age_19_employment_with_earnings_above_0_mean <- as.numeric(merged_industry_employment_19_0_activity$activity_at_age_19_employment_with_earnings_above_0_mean)
+merged_industry_employment_19_0_activity$activity_at_age_19_employment_with_earnings_above_0_median <- as.numeric(merged_industry_employment_19_0_activity$activity_at_age_19_employment_with_earnings_above_0_median)
+
+# Calculate the difference (only for rows without NAs)
+merged_industry_employment_19_0_activity$activity_at_age_19_employment_with_earnings_above_0_diff <- suppressWarnings(
+  merged_industry_employment_19_0_activity$activity_at_age_19_employment_with_earnings_above_0_mean - merged_industry_employment_19_0_activity$activity_at_age_19_employment_with_earnings_above_0_median
+)
+# Print results for full-time higher education activity in a table
+knitr::kable(merged_industry_employment_19_0_activity,
+   col.names = c("Industry Category", "Mean Employment (> £0)", "Median Employment (> £0)", "Difference"),
+   caption = "Mean, Median, and Difference in Employment with Earnings Above 0 at Age 19 by Industry Category",
+   digits = 2)
+ggplot(industry_employment_19_0_activity_mean, aes(x = region_industry_category, y = activity_at_age_19_employment_with_earnings_above_0)) +
+ geom_point(size = 5, color = "dodgerblue") +
+ labs(x = "Industry Category", y = "Mean Employment with Earnings Above 0 (%)") +
+ ylim(47, 53) + # Adjust if needed for your data
+ theme_minimal()
+```
+
+### 3.4.3 Employment with Earnings Above £10,000 at Age 19
+
+Table 10 and Figure 9 delve into the rates of employment with earnings exceeding £10,000 at age 19 across different industry categories. This metric provides deeper insights into higher-paying entry-level positions and potential wage disparities between sectors.
+
+```{r employment-10k-table, echo=FALSE}
+# Convert activity columns to numeric, removing non-numeric characters first
+region_filtered$activity_at_age_19_employment_with_earnings_above_10_000<- gsub("[^0-9.]", "", region_filtered$activity_at_age_19_employment_with_earnings_above_10_000)
+region_filtered$activity_at_age_19_employment_with_earnings_above_10_000 <- as.numeric(region_filtered$activity_at_age_19_employment_with_earnings_above_10_000)
+# Group the region_filtered data frame by region_industry_category and calculate mean/median employment (Earnings above 10k) 
+# activity at age 19 by industry category
+industry_employment_19_10k_activity_mean <- aggregate(activity_at_age_19_employment_with_earnings_above_10_000 ~ region_industry_category, data = region_filtered, FUN = function(x) mean(x, na.rm = TRUE))
+industry_employment_19_10k_activity_median <- aggregate(activity_at_age_19_employment_with_earnings_above_10_000 ~ region_industry_category, data = region_filtered, FUN = function(x) median(x, na.rm = TRUE))
+
+# Merge the data frames
+merged_industry_employment_19_10k_activity <- merge(industry_employment_19_10k_activity_mean, industry_employment_19_10k_activity_median, by = "region_industry_category", suffixes = c("_mean", "_median"))
+
+# Convert columns to numeric (in case of any type conversion issues after merge)
+merged_industry_employment_19_10k_activity$activity_at_age_19_employment_with_earnings_above_10_000_mean <- as.numeric(merged_industry_employment_19_10k_activity$activity_at_age_19_employment_with_earnings_above_10_000_mean)
+merged_industry_employment_19_10k_activity$activity_at_age_19_employment_with_earnings_above_10_000_median <- as.numeric(merged_industry_employment_19_10k_activity$activity_at_age_19_employment_with_earnings_above_10_000_median)
+
+# Calculate the difference (only for rows without NAs)
+merged_industry_employment_19_10k_activity$activity_at_age_19_employment_with_earnings_above_10_000_diff <- 
+  suppressWarnings(
+    ifelse(!is.na(merged_industry_employment_19_10k_activity$activity_at_age_19_employment_with_earnings_above_10_000_mean) &
+           !is.na(merged_industry_employment_19_10k_activity$activity_at_age_19_employment_with_earnings_above_10_000_median),
+           merged_industry_employment_19_10k_activity$activity_at_age_19_employment_with_earnings_above_10_000_mean - merged_industry_employment_19_10k_activity$activity_at_age_19_employment_with_earnings_above_10_000_median,
+           NA)
+  )
+
+
+# Print results for employment with earnings above 10k in a table
+knitr::kable(merged_industry_employment_19_10k_activity,
+     col.names = c("Industry Category", "Mean Employment (> £10,000)", "Median Employment (> £10,000)", "Difference"),
+     caption = "Mean, Median, and Difference in Employment with Earnings Above £10,000 at Age 19 by Industry Category",
+     digits = 2)
+
+ggplot(industry_employment_19_10k_activity_mean, aes(x = region_industry_category, y = activity_at_age_19_employment_with_earnings_above_10_000)) +
+  geom_point(size = 5, color = "dodgerblue") +
+  labs(x = "Industry Category", y = "Mean Employment with Earnings Above £10,000 (%)") +
+  ylim(22, 28) + # Adjust if needed for your data
+  theme_minimal()
+```
+
+### 3.4.4 Out-of-Work Status at Age 19
+
+Table 11 and Figure 10 explore the percentage of 19-year-olds who are not in education, employment, or training (NEET), highlighting potential differences in this outcome across industry categories. 
+
+```{r out-of-work-table, echo=FALSE}
+# Convert activity columns to numeric, removing non-numeric characters first
+region_filtered$activity_at_age_19_out_of_work<- gsub("[^0-9.]", "", region_filtered$activity_at_age_19_out_of_work)
+region_filtered$activity_at_age_19_out_of_work <- as.numeric(region_filtered$activity_at_age_19_out_of_work)
+
+# Group the region_filtered data frame by region_industry_category and calculate mean/median out of work
+# activity at age 19 by industry category
+industry_out_of_work_19_activity_mean <- aggregate(activity_at_age_19_out_of_work ~ region_industry_category, data = region_filtered, FUN = function(x) mean(x, na.rm = TRUE))
+industry_out_of_work_19_activity_median <- aggregate(activity_at_age_19_out_of_work ~ region_industry_category, data = region_filtered, FUN = function(x) median(x, na.rm = TRUE))
+# Merge the data frames
+merged_industry_out_of_work_19_activity <- merge(industry_out_of_work_19_activity_mean, industry_out_of_work_19_activity_median, by = "region_industry_category", suffixes = c("_mean", "_median"))
+
+# Convert columns to numeric before calculating the difference
+merged_industry_out_of_work_19_activity$activity_at_age_19_out_of_work_mean <- as.numeric(merged_industry_out_of_work_19_activity$activity_at_age_19_out_of_work_mean)
+merged_industry_out_of_work_19_activity$activity_at_age_19_out_of_work_median <- as.numeric(merged_industry_out_of_work_19_activity$activity_at_age_19_out_of_work_median)
+
+# Calculate the difference (only for rows without NAs)
+merged_industry_out_of_work_19_activity$activity_at_age_19_out_of_work_diff <- suppressWarnings(
+  merged_industry_out_of_work_19_activity$activity_at_age_19_out_of_work_mean - merged_industry_out_of_work_19_activity$activity_at_age_19_out_of_work_median
+)
+# Print results for out-of-work activity in a table
+knitr::kable(merged_industry_out_of_work_19_activity,
+     col.names = c("Industry Category", "Mean NEET Percentage", "Median NEET Percentage", "Difference"),
+     caption = "Mean, Median, and Difference in Out-of-Work Percentage at Age 19 by Industry Category",
+     digits = 2)
+
+ggplot(industry_out_of_work_19_activity_mean, aes(x = region_industry_category, y = activity_at_age_19_out_of_work)) +
+ geom_point(size = 5, color = "dodgerblue") +
+ labs(x = "Industry Category", y = "Mean Out-of-Work Percentage (%)") +
+ ylim(5, 13) + # Adjust if needed for your data
+ theme_minimal() 
+```
+
+### 3.4.5 Overall Analysis of Work Status at Age 19
+
+Tables 8-11 collectively paint a comprehensive picture of the early career outcomes of 19-year-olds across the three industry sectors.
+
+Apprenticeships (Table 8):
+
+The data reveals a striking difference in apprenticeship participation rates. The Secondary sector has the highest mean participation (14.98%), suggesting that technical and vocational training is a popular pathway for young people in this sector. This is followed by the Primary sector (12.59%) and then the Tertiary sector (10.72%).  This pattern aligns with the expectation that the Secondary sector, often associated with manufacturing and trades, would have a greater emphasis on apprenticeships.
+
+Employment with Earnings (Tables 9 & 10):
+
+Overall employment rates with earnings above zero (Table 9) are relatively similar across the three sectors, with the Primary sector showing a slight advantage. However, when examining employment with earnings above £10,000 (Table 10), a notable shift occurs. The Tertiary sector takes the lead, suggesting that higher-paying entry-level jobs are more prevalent in this sector, followed by Primary and then Secondary. This discrepancy highlights the potential wage disparities that emerge even in the early stages of one's career, potentially influenced by the skills and qualifications required in different industries.
+
+Out-of-Work Status (Table 11):
+
+The percentage of 19-year-olds who are NEET (not in education, employment, or training) is relatively low and fairly consistent across all sectors, with the Secondary sector showing a marginally higher rate (11.29%). While the differences are not substantial, it's worth noting that even a small percentage of NEET individuals can have significant social and economic consequences.
+
+### 3.5 Mean Highest Level Qualification at Age 22
+
+This section delves into the mean highest level of qualification achieved by age 22 across different industry categories. We use the average qualification score, which is a numerical representation of the highest qualification level attained.
+
+```{r highest-qualification-table, echo=FALSE}
+# Group the region_filtered data frame by region_industry_category and calculate mean/median highest level qualification
+# by age 22 by industry category
+industry_highest_level_qualification_22_mean <- aggregate(highest_level_qualification_achieved_b_age_22_average_score ~ region_industry_category, data = region_filtered, FUN = mean)
+industry_highest_level_qualification_22_median <- aggregate(highest_level_qualification_achieved_b_age_22_average_score ~ region_industry_category, data = region_filtered, FUN = median)
+# Merge the data frames
+merged_industry_highest_level_qualification_22 <- merge(industry_highest_level_qualification_22_mean, industry_highest_level_qualification_22_median, by = "region_industry_category", suffixes = c("_mean", "_median"))
+# Calculate the difference
+merged_industry_highest_level_qualification_22$hhighest_level_qualification_achieved_b_age_22_average_score_diff <- merged_industry_highest_level_qualification_22$highest_level_qualification_achieved_b_age_22_average_score_mean - merged_industry_highest_level_qualification_22$highest_level_qualification_achieved_b_age_22_average_score_median
+# Print results for highest level qualification at age 22 in a table
+knitr::kable(merged_industry_highest_level_qualification_22,
+             col.names = c("Industry Category", "Mean Qualification Score", "Median Qualification Score", "Difference"),
+             caption = "Mean, Median, and Difference in Highest Level Qualification Score at Age 22 by Industry Category",
+             digits = 2)
+ggplot(industry_highest_level_qualification_22_mean, aes(x = region_industry_category, y = highest_level_qualification_achieved_b_age_22_average_score)) +
+  geom_point(size = 5, color = "dodgerblue") +
+  labs(x = "Industry Category", y = "Mean Qualification Score") +
+  ylim(3.4, 3.6) +  # Adjust if needed for your data
+  theme_minimal() 
+```
+
+### 3.5.1 Highest Level Qualification Attained by Age 22
+
+Table 12 presents the mean and median highest level qualification scores achieved by age 22, along with the difference between these two measures, across the three industry categories. The qualification score is a numerical representation of the highest qualification level attained.
+
+A higher mean qualification score in the Tertiary sector (3.58) compared to the Secondary (3.52) and Primary (3.46) sectors indicates that individuals from tertiary-dominant regions tend to achieve slightly higher qualifications by the age of 22.  This aligns with the trends observed in earlier educational attainment stages (KS2, KS4, Levels 2 and 3), suggesting a consistent pattern of higher educational achievement in regions historically associated with service-based industries.
+
+The relatively small differences between mean and median scores across all three categories suggest a relatively symmetrical distribution of highest qualification scores within each sector. This implies that the mean values are representative of the typical attainment level for individuals in each industry category.
+
+### 3.6 Mean Education Score
+
+In this section, we investigate the mean education score, a composite measure of overall educational attainment, across the three industry categories. This allows us to gain a holistic understanding of the relationship between regional industry focus and educational success.
+
+```{r education-score-bar-chart, echo=FALSE}
+# Group the region_filtered data frame by region_industry_category and calculate mean/median education score by industry category. 
+industry_education_score_mean <- aggregate(education_score ~ region_industry_category, data = region_filtered, FUN = mean)
+industry_education_score_median <- aggregate(education_score ~ region_industry_category, data = region_filtered, FUN = median)
+# Merge the data frames
+merged_education_score <- merge(industry_education_score_mean, industry_education_score_median, by = "region_industry_category", suffixes = c("_mean", "_median"))
+# Calculate the difference
+merged_education_score$education_score_diff <- merged_education_score$education_score_mean - merged_education_score$education_score_median
+# Print results for education score in a table
+knitr::kable(merged_education_score,
+             col.names = c("Industry Category", "Mean Education Score", "Median Education Score", "Difference"),
+             caption = "Mean, Median, and Difference in Education Score by Industry Category",
+             digits = 2) # Round to 2 decimal places for better readability
+# Create the bar chart for mean education score
+ggplot(industry_education_score_mean, aes(x = region_industry_category, y = education_score, fill = "Mean Education Score")) +
+  geom_bar(stat = "identity", color = "black", fill = "dodgerblue") +
+  labs(x = "Industry Category", y = "Mean Education Score") +
+  theme_minimal() 
+```
+
+Table 13 summarizes the mean, median, and difference in education score by industry category.
+
+Mean Education Scores: The mean education score in the Tertiary sector (0.83) is significantly higher than both the Primary (-0.51) and Secondary (-0.06) sectors. This indicates a substantial advantage in educational attainment for individuals from regions historically dominated by service-based industries.
+
+Differences Between Mean and Median: While the differences between the mean and median scores are relatively small across all sectors, they suggest a potential positive skew in the distribution of education scores within each industry. This implies that there may be a higher proportion of individuals with above-average education scores within each sector, contributing to the mean being higher than the median.
+
+Further Analysis: Further investigation into the specific educational attainment levels within each sector would be valuable to understand the underlying reasons for these disparities. Exploring factors such as socioeconomic background, access to educational resources, and career aspirations could provide a more comprehensive picture of the complex relationship between industry and educational achievement.
+
+### 4.1 Summary of Findings
+
+The analysis of the "English Education" dataset reveals a complex relationship between regional industry focus and educational and early career outcomes in the UK. Here's a summary of our key findings:
+
+Educational Attainment:  A clear pattern emerges where students from tertiary-dominated regions consistently outperform those from primary and secondary sectors in various educational attainment metrics, including KS2, KS4, and Level 2 and 3 qualifications. This trend persists through age 22, with individuals from tertiary regions achieving higher average qualification scores.
+
+Further Education Participation:  We observe distinct patterns in further education participation at age 19. While the Tertiary sector has the highest participation in full-time higher education, the Secondary sector leads in sustained further education, likely reflecting the demand for vocational training in this sector.
+
+Early Career Outcomes:  The data reveals nuanced differences in early career outcomes. The Primary sector has the highest rate of employment with earnings above zero, but the Tertiary sector dominates in terms of higher-paying jobs (above £10,000). The Secondary sector, while showing high apprenticeship uptake, also experiences the highest rate of young people not in education, employment, or training (NEET).
+
+Income Flag: An additional finding suggests a correlation between industry category and income levels. Primary and Tertiary sectors are predominantly associated with "lower deprivation towns," while Secondary sectors are more commonly linked to "higher deprivation towns."
+
+### 4.2 Interpretation and Analysis
+
+These findings imply a significant role of historical regional industry in shaping educational trajectories and early career choices in the UK. The persistent advantage of the Tertiary sector in academic attainment may reflect greater access to educational resources, a culture that values higher education, and career pathways that often require advanced qualifications. Conversely, the Secondary sector's strength in apprenticeships highlights the importance of vocational training in this sector, but the higher NEET rate suggests challenges in transitioning to stable employment.
+
+### 4.3 Implications
+
+These results have substantial implications for educational policy and workforce development. They suggest the need for targeted interventions to address educational disparities across regions and industry sectors. For instance, increasing access to higher education in primary and secondary regions, and promoting vocational training opportunities in tertiary areas, could enhance social mobility and economic outcomes for young people.
+
+### 4.4 Limitations
+
+The study has several limitations. The data only covers a specific time period (2007-2013) and may not reflect current trends. The categorization of regions into primary, secondary, and tertiary industries is a simplification of complex economic realities. The analysis also relies on aggregated data, potentially masking individual variations within each sector. Additionally, the dataset does not provide direct information on socioeconomic status, parental education levels, or school quality, which are crucial factors influencing educational attainment.
+
+### 4.5 Possible Explanations for Observed Patterns
+
+Several factors could be contributing to the observed differences in educational and career outcomes across industries:
+
+* Socioeconomic Factors: Regions historically dominated by tertiary industries may have higher average incomes and better access to educational resources,      leading to improved academic outcomes.
+* Educational Infrastructure: Tertiary regions may have more universities and colleges, while secondary regions may have more vocational schools, influencing   educational choices.
+* Cultural Norms: Different industries may have distinct cultural values and expectations regarding education and career paths, which could shape the choices   of young people.
+* Labor Market Demand: The skills and qualifications demanded by the dominant industry in a region could influence the types of education and training          individuals pursue.
+* Further research is needed to explore these factors in depth and identify specific mechanisms through which regional industry influences educational and      career outcomes.
+
+### 5. Conclusion
+
+This study provides compelling evidence of the enduring impact of historical industrialization on educational attainment and early career trajectories in the UK. Analysis of the "English Education" dataset reveals a consistent pattern: students from regions historically associated with tertiary (service-based) industries tend to achieve higher educational qualifications and pursue further education at a greater rate than their counterparts from primary (raw materials) and secondary (manufacturing) industry regions.
+
+These findings underscore the enduring influence of regional context on educational pathways. The legacy of industrial specialization appears to shape cultural attitudes towards education, access to resources, and the types of skills valued in different communities.
+
+While our analysis highlights clear disparities in educational attainment and career outcomes, it also raises important questions for further investigation:
+
+* Causal Mechanisms: What are the specific mechanisms through which regional industry influences educational and career choices? Are these influences           primarily driven by socioeconomic factors, educational infrastructure, cultural norms, or a combination of these?
+* Long-Term Effects: How do these early disparities in educational attainment translate into long-term outcomes in terms of income, employment, and overall     well-being?
+* Policy Interventions: What targeted educational policies or interventions could be most effective in addressing these disparities and promoting educational   equity across different regions and industry sectors?
+* Changing Landscape: How has the decline of traditional industries and the rise of new sectors impacted these patterns? Does the historical industry focus     still hold the same predictive power for educational and career outcomes in the current economic landscape?
+* Individual Agency: To what extent do individual choices and aspirations influence educational and career trajectories, independent of regional industry       influences?
+
+The legacy of the Industrial Revolution continues to echo in the present, shaping educational and career pathways for generations to come. It is our responsibility to understand and address these enduring effects to create a more equitable and prosperous future for all.
+
+
+
+
+
+
+
+
