@@ -2,7 +2,7 @@
 title: "From Classroom to Career: How Regional Industries Shape Educational and Early-Career
   Trajectories in the UK"
 author: "Luke Littler"
-date: "22-07-2022"
+date: "22-07-2024"
 output: pdf_document
 ---
 
