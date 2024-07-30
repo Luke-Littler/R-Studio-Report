@@ -38,10 +38,10 @@ unique_regions_industry$region_industry_category <- ""
 
 # Now we have a list of all of the unique regions from the 'region_filtered'
 # data, we can now begin research on what industry category was most prevalent 
-# in the 1960s for each region and record that externally for now. 
+# for each region and record that externally for now. 
 
 # Now we have determined which industry category was most prevalent to each
-# region during the 1960s, we can start to input that data in the 
+# region we can start to input that data in the 
 # 'region_industry_category' column. 
 
 # Update the `region_industry_category` for East Midlands to 'Secondary'
